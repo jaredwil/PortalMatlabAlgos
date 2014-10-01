@@ -12,8 +12,8 @@ can be uploaded to the portal with uploadAnnotations.m (IEEGPortalTools) for vie
 
 Scripts include:
 
-spike_AR.m              -   sspike detector based on autoregressive modeling of noise (Acir 2004). Seen to work well on clean intracranial rat data
+-spike_AR.m              -   sspike detector based on autoregressive modeling of noise (Acir 2004). Seen to work well on clean intracranial rat data
 
 TO BE ADDED:
-spike_LL_filtered.m     -	spike detector based on line length
-spike_keating_auto.m	-	spike detector based on Jeff Keating's algorithm
+-spike_LL_filtered.m     -	spike detector based on line length
+-spike_keating_auto.m	 -	spike detector based on Jeff Keating's algorithm
