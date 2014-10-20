@@ -1,4 +1,4 @@
-function [eventTimesUSec, eventChannels] = burst_detector_v2(dataset, channels,thres,maxThres,minDur,maxDur)
+function [eventTimesUSec, eventChannels] = burst_detector_v2(dataset, channels,thres,maxThres,minDur,maxDur,filtFlag)
 %Usage: burst_detector_v2(dataset, blockLenSecs, channels)
 %This function will calculate bursts based on line length.
 %Input: 
@@ -33,7 +33,7 @@ numBlocks = ceil(duration/blockLenSecs);
 % the amount of padding before and after threshold onset/offset to use, in
 % seconds  
 params.plotsOn = 0;
-params.filt = 1;
+params.filt = filtFlag;
 params.padSecs = .02;
 params.winSecs = 1;
 params.thres = thres;
