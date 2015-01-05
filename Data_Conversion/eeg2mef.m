@@ -1,4 +1,4 @@
-function []=eeg2mef(serverPath, subjectPath)
+function []=eeg2mef(serverPath, subjectPath, subject)
 %   This is a generic function that converts data from the raw binary *.eeg 
 %   format to MEF. Header information for this data is contained in the
 %   *.bni files and the data is contained in the *.eeg files.
@@ -11,10 +11,12 @@ function []=eeg2mef(serverPath, subjectPath)
 %       MEF files are written to separate folder in subjectPath 
 %
 %   USAGE:
-%       dat2mef('/mnt/local/gdrive/public','/mnt/local/gdrive/public/DATA/Animal_Data/Dichter/r092/Hz250')
+%       eeg2mef('/mnt/local/gdrive/public','/mnt/local/gdrive/public/DATA/Animal_Data/Dichter/r092/Hz250')
 
-    javaaddpath(fullfile(serverPath,'USERS','anani','PORTAL','Tools','MEFwrite','MEF_writer.jar'))
-    import edu.upenn.cis.db.mefview.services.*
+    dbstop in eeg2mef at 50;
+    
+%     javaaddpath(fullfile(serverPath,'USERS','anani','PORTAL','Tools','MEFwrite','MEF_writer.jar'))
+%     import edu.upenn.cis.db.mefview.services.*
     EEGList=dir(fullfile(subjectPath,[subject,'*.eeg']));
     
     for j=1:length(EEGList)
