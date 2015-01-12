@@ -1,40 +1,30 @@
-function data_key = f_create_data_key()
-  data_key.animal_id = {
+function dataKey = f_create_data_key()
+  dataKey.animal_id = {
     'r097'
     'r099'
     'r100'
     'r101'
-    'r104'
     'r107'
     'r121'
     'r127'
     'r130'
     'r137'
-    'r146'
     'r151'
     'r152'
-    'r157'
-    'r161'
-    'r168'
   };
 
-  data_key.portal_id = {
-    'I002_A0001'
-    'I002_A0002'
-    'I002_A0003'
-    'I002_A0004'
-    'I002_A0005'
-    'I002_A0006'
-    'I002_A0007'
-    'I002_A0008'
-    'I002_A0009'
-    'I002_A0010'
-    'I002_A0011'
-    'I002_A0012'
-    'I002_A0013'
-    'I002_A0014'
-    'I002_A0015'
-    'I002_A0016'
+  dataKey.portal_id = {
+    'I032_A0001'
+    'I032_A0002'
+    'I032_A0003'
+    'I032_A0004'
+    'I032_A0005'
+    'I032_A0006'
+    'I032_A0007'
+    'I032_A0008'
+    'I032_A0009'
+    'I032_A0010'
+    'I032_A0011'
   };
 
 end

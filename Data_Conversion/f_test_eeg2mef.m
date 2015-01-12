@@ -1,25 +1,22 @@
-function [] = f_dichter_test_eeg2mef(sessionData, animalDir, dataBlockLen)
-%   This is a generic function that converts data from the raw binary *.eeg 
-%   format to MEF. Header information for this data is contained in the
-%   *.bni files and the data is contained in the *.eeg files.  Files are
-%   concatenated based on the time data in the .bni file, resulting in one
-%   file per channel which includes all data sessions.
+function [] = f_test_eeg2mef(sessionData, animalDir, dataBlockLen)
+%   This is a generic function that compares .mef data (from the portal)
+%   to the original .eeg file (use f_eeg2mef to convert data).  This
+%   function checks metadata as well as timeseries data.
 %
 %   INPUT:
-%       animalDir  = directory with one or more .eeg files for conversion
-%       dataBlockLen = amount of data to pull from .eeg at one time, in hrs
-%       gapThresh = duration of data gap for mef to call it a gap, in msec
-%       mefBlockSize = size of block for mefwriter to wrte, in sec
+%       sessionData  = portal IEEGDataset object, i.e. session.data()
+%       animalDir = path to the .eeg files comprising the sessionData
+%       dataBlockLen = hrs; amount of data to pull from eeg/portal at once
 %
 %   OUTPUT:
-%       MEF files are written to 'mef\' subdirectory in animalDir, ie:
-%       Z:\public\DATA\Animal_Data\DichterMAD\r097\Hz2000\mef\
+%       If the files differ at any point, this script will stop execution 
+%       and enter keyboard mode (K>>) to allow analysis of the data
 %
 %   USAGE:
-%       eeg2mef('Z:\public\DATA\Animal_Data\DichterMAD\r097\Hz2000',0.1,10000,10);
+%       f_test_eeg2mef(session.data(d),Z:\public\DATA\Animal_Data\DichterMAD\r097\Hz2000,0.1);
 %
 %  datestr(timeVec(1)/1e6/3600/24)
-%   dbstop in f_dichter_test_eeg2mef at 109;
+%   dbstop in f_test_eeg2mef at 109;
 %     
 
     dateFormat = 'mm/dd/yyyy HH:MM:SS';
@@ -45,7 +42,7 @@ function [] = f_dichter_test_eeg2mef(sessionData, animalDir, dataBlockLen)
     startTime = (dateNumber - dateOffset + 1) * 24 * 3600 * 1e6;
 
     % test one channel at a time
-    for c = 1: animalNChan
+    for c = 1: 1%animalNChan
       % get portal metadata
       portalSF = sessionData.channels(c).sampleRate;
       portalNChan = length(sessionData.channels());
@@ -56,7 +53,7 @@ function [] = f_dichter_test_eeg2mef(sessionData, animalDir, dataBlockLen)
 
       % confirm metadata matches for each file
       assert(portalSF == animalSF, 'Sampling rate mismatch: %s', EEGList(1).name);
-      assert(portalNChan == animalNChan, 'Number of channels mismatch: %s', EEGList(1).name);
+%       assert(portalNChan == animalNChan, 'Number of channels mismatch: %s', EEGList(1).name);
       assert(portalVFactor == animalVFactor, 'Voltage calibration mismatch: %s', EEGList(1).name);
       assert(strcmp(portalChanLabel, sprintf('ch%02d_%s',c,chanLabels{c})), 'Channel label mismatch: %s',EEGList(1).name);
       assert(abs(portalStart-startTime) < 1, 'Start time mismatch: %s', EEGList(1).name);
@@ -85,14 +82,18 @@ function [] = f_dichter_test_eeg2mef(sessionData, animalDir, dataBlockLen)
           fclose(fid2);
           m=memmapfile(fullfile(animalDir,EEGList(f).name),'Format',{'int16',[animalNChan numSamples],'x'});
 
+          fileEnd = fileStart + numSamples/2000*1e6;
+          recordEnd = datestr(datenum(fileEnd/1e6/3600/24)+dateOffset-1);
+          fprintf('file: %s   start: %s %s   end: %s \n',EEGList(f).name,recordDate,recordTime,recordEnd);
+
           blockSize = dataBlockLen * 3600 * animalSF;  % amount of data to pull from EEG file at one time, in samples
           numBlocks = ceil(numSamples/blockSize);
           for b = 1: numBlocks
-%             msg = sprintf(...
-%               'Testing %s channel %d. Percent finished: %3.1f.\\n',...
-%               EEGList(f).name, c, 100*b/numBlocks);
-%             fprintf([reverseStr, msg]);
-%             reverseStr = repmat(sprintf('\b'), 1, length(msg)-1);
+            msg = sprintf(...
+              'Testing %s channel %d. Percent finished: %3.1f.\\n',...
+              EEGList(f).name, c, 100*b/numBlocks);
+            fprintf([reverseStr, msg]);
+            reverseStr = repmat(sprintf('\b'), 1, length(msg)-1);
 
             curPt = 1 + (b-1)*blockSize;
             endPt = min([b*blockSize numSamples]);
@@ -102,12 +103,17 @@ function [] = f_dichter_test_eeg2mef(sessionData, animalDir, dataBlockLen)
             
             diffInd = find(double(eegData)' - portalData,1);
             if ~isempty(diffInd)
-              keyboard;
+              fprintf('recalculating offset: %s\n',EEGList(f).name);
+              newportalOffset = round(offsetUsec / 1e6 * 2000);
+              portalData = sessionData.getvalues(curPt+newportalOffset:endPt+newportalOffset,c);
+              diffInd = find(double(eegData)' - portalData,1);
+              if ~isempty(diffInd)
+                keyboard;
+              else
+                portalOffset = newportalOffset;
+              end
             end
           end
-          fileEnd = fileStart + numSamples/2000*1e6;
-          recordEnd = datestr(datenum(fileEnd/1e6/3600/24)+dateOffset-1);
-          fprintf('file: %s   start: %s %s   end: %s \n',EEGList(f).name,recordDate,recordTime,recordEnd);
           reverseStr = '';
         catch err
           if (isempty(regexp(EEGList(f).name,'r\d{3}_\d{3}.eeg')))
