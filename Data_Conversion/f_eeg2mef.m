@@ -19,38 +19,58 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
 %       f_eeg2mef('Z:\public\DATA\Animal_Data\DichterMAD\r097\Hz2000',0.1,10000,10);
 %
 % datestr(timeVec(1)/1e6/3600/24)
-%    dbstop in f_eeg2mef at 79
+%    dbstop in f_eeg2mef at 53
 %     
 
     % portal time starts at midnight on 1/1/1970
     dateFormat = 'mm/dd/yyyy HH:MM:SS';
     dateOffset = datenum('1/1/1970 0:00:00',dateFormat);  % portal time
 
-    % get list of .eeg files in the animal directory
-    EEGList=dir(fullfile(animalDir,'*.eeg'));
+    % get list of data files in the animal directory
+    % remove files that do not match the r###_### naming convention
+    % remove BNI files
+    % and remove eeg files with less than 100 kb - the recording system
+    % kicks to the next file at 0:00 and will sometimes leave a tiny file
+    % with < 1 sec of data, the timestamps overlap, & this causes an error
+    EEGList = dir(fullfile(animalDir,'*'));
+    removeThese = false(length(EEGList),1);
+    for f = 1:length(EEGList)
+      if (isempty(regexpi(EEGList(f).name,'r\d{3}_\d{3}\.'))) || ...
+        (~isempty(regexpi(EEGList(f).name,'bni'))) 
+        removeThese(f) = true;
+      elseif (EEGList(f).bytes < 100000)
+        removeThese(f) = true;       
+      end
+    end
+    EEGList(removeThese) = [];
+    
+    [~,IX] = sort([EEGList.datenum]); % sort EEGList by when files were saved
+    EEGList = EEGList(IX);
 
     % confirm at least one eeg file exists, if so, then open the first
     % bni file to get the metadata for the animal
     assert(length(EEGList) >= 1, 'No data found in directory.');
     try % sometimes the bni files have different extensions
-      bni_name = fullfile(animalDir,[EEGList(1).name(1:8) '.bni']);
+      if (regexp(EEGList(1).name,'eeg'))
+        bni_name = fullfile(animalDir,[EEGList(1).name(1:8) '.bni']);
+      else
+        bni_name = fullfile(animalDir,[EEGList(1).name '.bni']);
+      end
       fid=fopen(bni_name);   % METADATA IN BNI FILE
       metadata=textscan(fid,'%s = %s %*[^\n]');
       fclose(fid);
     catch
       try 
-        bni_name = fullfile(animalDir,[EEGList(1).name(1:8) '.bni_orig']);
+        if (regexp(EEGList(1).name,'eeg'))
+          bni_name = fullfile(animalDir,[EEGList(1).name(1:8) '.bni_orig']);
+        else
+          bni_name = fullfile(animalDir,[EEGList(1).name '.bni_orig']);
+        end
         fid=fopen(bni_name);   % METADATA IN BNI FILE
         metadata=textscan(fid,'%s = %s %*[^\n]');
         fclose(fid);
       catch
-%         try
-%         bni_name = fullfile(animalDir,[EEGList(1).name(1:8) '.000.bni']);
-%         fid=fopen(bni_name);   % METADATA IN BNI FILE
-%         metadata=textscan(fid,'%s = %s %*[^\n]');
-%         fclose(fid);
-%         catch
-        fprintf('Check BNI file exists: %s\n',fullfile(animalDir,[EEGList(1).name(1:8) '.bni']));
+        fprintf('Check BNI file exists: %s\n',bni_name);
         keyboard;
       end
     end
@@ -84,36 +104,34 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
       % run through each file in the directory and append it to mef file
       for f = 1:length(EEGList)
         try
-          % confirm file name matches expected name format - to weed out unrelated files
-          assert(~isempty(regexp(EEGList(f).name,'r\d{3}_\d{3}.eeg')), 'File name mismatch: %s', EEGList(f).name); 
-
           % open BNI file to get metadata and recording start for this file
           try % sometimes the files have different extensions
-            bni_name = fullfile(animalDir,[EEGList(f).name(1:8) '.bni']);
+            if (regexp(EEGList(f).name,'eeg'))
+              bni_name = fullfile(animalDir,[EEGList(f).name(1:8) '.bni']);
+            else
+              bni_name = fullfile(animalDir,[EEGList(f).name '.bni']);
+            end
             fid=fopen(bni_name);   % METADATA IN BNI FILE
             metadata=textscan(fid,'%s = %s %*[^\n]');
             fclose(fid);
           catch
             try
-              bni_name = fullfile(animalDir,[EEGList(f).name(1:8) '.bni_orig']);
+              if (regexp(EEGList(f).name,'eeg'))
+                bni_name = fullfile(animalDir,[EEGList(f).name(1:8) '.bni_orig']);
+              else
+                bni_name = fullfile(animalDir,[EEGList(f).name '.bni_orig']);
+              end
               fid=fopen(bni_name);   % METADATA IN BNI FILE
               metadata=textscan(fid,'%s = %s %*[^\n]');
               fclose(fid);
             catch
-%               try
-%                 bni_name = fullfile(animalDir,[EEGList(f).name(1:8) '.000.bni']);
-%                 fid=fopen(bni_name);   % METADATA IN BNI FILE
-%                 metadata=textscan(fid,'%s = %s %*[^\n]');
-%                 fclose(fid);
-%               catch
-                fprintf('Check BNI file exists: %s\n',fullfile(animalDir,[EEGList(f).name(1:8) '.bni']));
+                fprintf('Check BNI file exists: %s\n',bni_name);
                 keyboard;
             end
           end
 
           % confirm metadata matches for each file
           assert(strcmp(sscanf(char(metadata{1,2}(strcmp(metadata{:,1},'eeg_number'))),'%c',4),animalName),'Animal name mismatch: %s', EEGList(f).name);
-          assert(strcmp(metadata{1,2}(strcmp(metadata{:,1},'Comment')),animalVideo),'Animal video mismatch: %s', EEGList(f).name);
           assert(str2double(metadata{1,2}(strcmp(metadata{:,1},'Rate'))) == animalSF, 'Sampling rate mismatch: %s', EEGList(f).name);
           assert(str2double(metadata{1,2}(strcmp(metadata{:,1},'NchanFile'))) == animalNChan, 'Number of channels mismatch: %s', EEGList(f).name);
           assert(str2double(metadata{1,2}{strcmp(metadata{:,1},'UvPerBit')}) == animalVFactor, 'Voltage calibration mismatch: %s', EEGList(f).name);
@@ -133,9 +151,11 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
           m=memmapfile(fullfile(animalDir,EEGList(f).name),'Format',{'int16',[animalNChan numSamples],'x'});
 
           % calculate end time of recording for file, output to display
-          fileEnd = startTime + numSamples/2000*1e6;
+          fileEnd = startTime + numSamples/animalSF*1e6;
           recordEnd = datestr(datenum(fileEnd/1e6/3600/24)+dateOffset-1);
-          fprintf('file: %s   start: %s %s   end: %s \n',EEGList(f).name,recordDate,recordTime,recordEnd);
+          fprintf('file: %s (%d/%d)   start: %s %s   end: %s   chan: %d/%d\n',...
+            EEGList(f).name,f,length(EEGList),recordDate,recordTime,...
+            recordEnd, c, animalNChan);
 
           % need to pull small blocks of data from memmap file
           blockSize = dataBlockLen * 3600 * animalSF;  % amount of data to pull from EEG file at one time, in samples
@@ -152,12 +172,12 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
             timeVec = 0:length(data)-1;
             timeVec = timeVec ./ animalSF * 1e6;
             timeVec = timeVec + startTime + blockOffset;
-            msg = sprintf(...
-              'Writing %s channel %d. Percent finished: %3.1f. %s \\n',...
-              EEGList(f).name, c, 100*b/numBlocks, ...
-              datestr(timeVec(1)/1e6/3600/24));
-            fprintf([reverseStr, msg]);
-            reverseStr = repmat(sprintf('\b'), 1, length(msg)-1);
+%             msg = sprintf(...
+%               'Writing %s channel %d. Percent finished: %3.1f. %s \\n',...
+%               EEGList(f).name, c, 100*b/numBlocks, ...
+%               datestr(timeVec(1)/1e6/3600/24));
+%             fprintf([reverseStr, msg]);
+%             reverseStr = repmat(sprintf('\b'), 1, length(msg)-1);
 
             % send time, data vectors to mef file
             try
