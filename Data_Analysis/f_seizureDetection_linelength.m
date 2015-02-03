@@ -35,7 +35,7 @@ duration = dataset.channels(channels(1)).get_tsdetails.getDuration / 1e6;
 blockLenSecs = blockDur*60*60;
 numBlocks = ceil(duration/blockLenSecs)
 
-dbstop in f_burstDetection_linelength at 75;
+% dbstop in f_burstDetection_linelength at 75;
 % edit so it can run 4 channels?
 % edit so params is created in wrapper and passed to burst_detector?
 % change duration of block to a passed parameter?
