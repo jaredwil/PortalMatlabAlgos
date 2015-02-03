@@ -7,46 +7,35 @@
 % add output to file component to track results, later, compare to doug's annotations?
 %
 
-clear all; close; clc; tic;
+clear all; close all; clc; tic;
 addpath('C:\Users\jtmoyer\Documents\MATLAB\');
 addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\ieeg-matlab-1.8.3'));
 
 %% Define which parts of the script to run
 runBurstDetection = 0;  % refer to dataKey (f_xxxx_data_key.m)
-runSpikeDetection = 1;
+runSpikeDetection = 0;
+runSeizureDetection = 0;
 runClustering = 0;
-runPhysiology = 0;
-uploadAnnotations = 1;
-saveToFile = 1;
+runPhysiology = 1;
+saveToFile = 0;
 
 
 %% Define constants for the analysis
 study = 'dichter';  % 'dichter'; 'jensen'; 'pitkanen'
-runThese = 1;
+runThese = [2];  % dichter 2-3, pitkanen 1-3
+channels = [1,3];
 
-params.experiment = 'SD-popspikes';
-params.channels = 1;
-params.blockDur = 1;  % hours; amount of data to pull at once
-params.minThresh = 2;    % X * stdev(signal); minimum threshold to detect burst; 
-params.maxThresh = 6;  % X * stdev(signal); maximum threshold;
-params.minDur = 2;    % sec; min duration of the burst
-params.maxDur = 100;       % sec; max duration of the burst
-params.winSecs = params.minDur; % sec; size of the window for feature detection
-params.padSecs = 1;   %  sec; amount to pad around the edges of the returned features
-params.filter = 'butter';  % 'butterworth'; if filled, will filter data
-params.highPass = 5;    % Hz; high pass cutoff freq for filter
-params.lowPass = 30;    % Hz; low pass cutoff freq for filter
-params.filtOrder = 5;   % order of the filter to use
-params.downSample = 250; % if >0, will downsample data before analysis
-params.plotData = 0;  % plot data, yes or no
+% params.label = 'spike';
+% params.technique = 'threshold';
+% params.blockDur = 1;  % hours; amount of data to pull at once
 
-% params.experiment = 'BD-linelength';
-% params.channels = 1;
+% params.label = 'burst';
+% params.technique = 'linelength';
 % params.blockDur = 1;  % hours; amount of data to pull at once
 % params.minThresh = 2;    % X * stdev(signal); minimum threshold to detect burst; 
 % params.maxThresh = 6;  % X * stdev(signal); maximum threshold;
-% params.minDur = 2;    % sec; min duration of the burst
-% params.maxDur = 100;       % sec; max duration of the burst
+% params.minDur = 1.5;    % sec; min duration of the burst
+% params.maxDur = 10;       % sec; max duration of the burst
 % params.winSecs = params.minDur; % sec; size of the window for feature detection
 % params.padSecs = 1;   %  sec; amount to pad around the edges of the returned features
 % params.filter = 'butter';  % 'butterworth'; if filled, will filter data
@@ -55,15 +44,31 @@ params.plotData = 0;  % plot data, yes or no
 % params.filtOrder = 5;   % order of the filter to use
 % params.downSample = 250; % if >0, will downsample data before analysis
 % params.plotData = 0;  % plot data, yes or no
-% <html><br></html>
 
+% params.label = 'seizure';
+% params.technique = 'linelength';
+% params.blockDur = 1;  % hours; amount of data to pull at once
+% params.minThresh = 2;    % X * stdev(signal); minimum threshold to detect burst; 
+% params.maxThresh = 6;  % X * stdev(signal); maximum threshold;
+% params.minDur = 10;    % sec; min duration of the burst
+% params.maxDur = 1000;       % sec; max duration of the burst
+% params.winSecs = params.minDur; % sec; size of the window for feature detection
+% params.padSecs = 1;   %  sec; amount to pad around the edges of the returned features
+% params.filter = 'butter';  % 'butterworth'; if filled, will filter data
+% params.highPass = 5;    % Hz; high pass cutoff freq for filter
+% params.lowPass = 30;    % Hz; low pass cutoff freq for filter
+% params.filtOrder = 5;   % order of the filter to use
+% params.downSample = 250; % if >0, will downsample data before analysis
+% params.plotData = 0;  % plot data, yes or no
 
 %% Load investigator specific information
 switch study
   case 'dichter'
     addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\P05-Dichter-data'));
   case 'jensen'
-    addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\P04-Jensen-data'));    
+    addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\P04-Jensen-data')); 
+  case 'pitkanen'
+    addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\P01-Pitkanen-data')); 
 end
 fh = str2func(['f_' study '_data_key']);
 dataKey = fh();
@@ -84,26 +89,94 @@ end
 
 %% Run analysis
 for r = 1:length(runThese)
-  for c = 1:length(session.data(r).channels)
-    if runBurstDetection
-      fprintf('Burst detection in : %s\n',session.data(r).snapName);
-      fh = str2func(['f_burstDetection_' params.experiment]);
-      [burstTimes, burstChannels] = fh(session.data(r),params);
+  if runBurstDetection
+    params.label = 'burst';
+    params.technique = 'linelength';
+    params.blockDur = 1;  % hours; amount of data to pull at once
+    params.minThresh = 2;    % X * stdev(signal); minimum threshold to detect burst; 
+    params.maxThresh = 6;  % X * stdev(signal); maximum threshold;
+    params.minDur = 1.5;    % sec; min duration of the burst
+    params.maxDur = 10;       % sec; max duration of the burst
+    params.winSecs = params.minDur; % sec; size of the window for feature detection
+    params.padSecs = 1;   %  sec; amount to pad around the edges of the returned features
+    params.filter = 'butter';  % 'butterworth'; if filled, will filter data
+    params.highPass = 5;    % Hz; high pass cutoff freq for filter
+    params.lowPass = 30;    % Hz; low pass cutoff freq for filter
+    params.filtOrder = 5;   % order of the filter to use
+    params.downSample = 250; % if >0, will downsample data before analysis
+    params.plotData = 0;  % plot data, yes or no
+
+    fprintf('Burst detection in : %s\n',session.data(r).snapName);
+    f_name = sprintf('f_%sDetection_%s', params.label, params.technique);
+    fh = str2func(f_name);
+    [eventTimes, eventChannels] = fh(session.data(r),channels,params);
+
+    if exist('eventTimes', 'var')
+      label = sprintf('%s-%s',params.label,params.technique);
+      f_uploadAnnotations(session.data(r),label,eventTimes,eventChannels,label);
     end
-    if uploadAnnotations
-      f_uploadAnnotations(session.data(r),burstDetections.experiment,burstTimes,burstChannels,burstDetections.experiment);
+  end
+  if runSpikeDetection
+    params = [];
+    params.label = 'spike';
+    params.technique = 'threshold';
+    params.blockDur = 1;  % hours; amount of data to pull at once
+    
+    fprintf('Spike detection in : %s\n',session.data(r).snapName);
+    f_name = sprintf('f_%sDetection_%s', params.label, params.technique);
+    fh = str2func(f_name);
+    [eventTimes, eventChannels] = fh(session.data(r),params.label,params.blockDur,channels);
+
+    if exist('eventTimes', 'var')
+      label = sprintf('%s-%s',params.label,params.technique);
+      f_uploadAnnotations(session.data(r),label,eventTimes,eventChannels,label);
     end
-    if saveToFile
-      f_saveToFile(params.experiment,burstTimes,burstChannels);
-    end
+  end
+  if runSeizureDetection
+    clear params;
+    params.label = 'seizure';
+    params.technique = 'linelength';
+    params.blockDur = 1;  % hours; amount of data to pull at once
+    params.minThresh = 2;    % X * stdev(signal); minimum threshold to detect burst; 
+    params.maxThresh = 6;  % X * stdev(signal); maximum threshold;
+    params.minDur = 10;    % sec; min duration of the burst
+    params.maxDur = 1000;       % sec; max duration of the burst
+    params.winSecs = params.minDur; % sec; size of the window for feature detection
+    params.padSecs = 1;   %  sec; amount to pad around the edges of the returned features
+    params.filter = 'butter';  % 'butterworth'; if filled, will filter data
+    params.highPass = 5;    % Hz; high pass cutoff freq for filter
+    params.lowPass = 30;    % Hz; low pass cutoff freq for filter
+    params.filtOrder = 5;   % order of the filter to use
+    params.downSample = 250; % if >0, will downsample data before analysis
+    params.plotData = 0;  % plot data, yes or no
+
+    fprintf('Seizure detection in : %s\n',session.data(r).snapName);
+    f_name = sprintf('f_%sDetection_%s', params.label, params.technique);
+    fh = str2func(f_name);
+    [eventTimes, eventChannels] = fh(session.data(r),channels,params);
+
+    if exist('eventTimes', 'var')
+      label = sprintf('%s-%s',params.label,params.technique);
+      f_uploadAnnotations(session.data(r),label,eventTimes,eventChannels,label);
+    end    
+  end
+%   if exist('eventTimes', 'var')
+%     label = sprintf('%s-%s',params.label,params.technique);
+%     f_uploadAnnotations(session.data(r),label,eventTimes,eventChannels,label);
+%   end
+  if saveToFile
+    f_saveToFile(params.experiment,eventTimes,eventChannels);
   end
   if runClustering
   end
   if runPhysiology
     fig_h = 1;  % handle to current figure; this gets incremented in each function
-    [fig_h] = fn_bph_per_rat(session,data_key,fig_h);
-    [fig_h] = fn_bph_per_group(session,data_key,fig_h);
-    [fig_h] = fn_histogram_per_rat(session,data_key,fig_h);
+%     [fig_h] = fn_bph_per_rat(session,data_key,fig_h);
+%     [fig_h] = fn_bph_per_group(session,data_key,fig_h);
+%     params.label = 'spike';
+%     params.technique = 'threshold';
+%     [fig_h] = f_histogram_per_rat(session.data(r),dataKey,params,fig_h);
+    [fig_h] = f_choppedHistogram_per_rat(session.data(r),dataKey,fig_h);
   end
 end
 % <html><br></html>

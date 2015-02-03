@@ -19,7 +19,7 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
 %       f_eeg2mef('Z:\public\DATA\Animal_Data\DichterMAD\r097\Hz2000',0.1,10000,10);
 %
 % datestr(timeVec(1)/1e6/3600/24)
-%    dbstop in f_eeg2mef at 53
+%     dbstop in f_eeg2mef at 156
 %     
 
     % portal time starts at midnight on 1/1/1970
@@ -90,7 +90,8 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
     end
 
     % convert one channel at a time
-    for c = 1: animalNChan
+%     for c = 1: animalNChan
+    for c = 1: 4  % 1-4 are CA1 and DG, except r151 and r152
       % open mef file, write metadata to the mef file
       mefFile = fullfile(outputDir, ['Dichter_' animalName '_ch' num2str(c, '%0.2d') '_' chanLabels{c} '.mef']);
       h = edu.mayo.msel.mefwriter.MefWriter(mefFile, mefBlockSize, animalSF, gapThresh); 
@@ -100,6 +101,8 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
       h.setPhysicalChannelNumber(c);
       h.setVoltageConversionFactor(animalVFactor);
       h.setChannelName(chanLabels{c});
+      fileEnd = 0;    % for catching overlapping files
+      dropSamples = 0;
 
       % run through each file in the directory and append it to mef file
       for f = 1:length(EEGList)
@@ -150,6 +153,12 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
           fclose(fid2);
           m=memmapfile(fullfile(animalDir,EEGList(f).name),'Format',{'int16',[animalNChan numSamples],'x'});
 
+          % make sure the beginning of this file does not overlap the end
+          % of the previous file
+          if startTime <= fileEnd
+            dropSamples = ceil((fileEnd-startTime)/1e6*animalSF);              
+          end
+          
           % calculate end time of recording for file, output to display
           fileEnd = startTime + numSamples/animalSF*1e6;
           recordEnd = datestr(datenum(fileEnd/1e6/3600/24)+dateOffset-1);
@@ -163,7 +172,7 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
           reverseStr = '';
           % write data block by block to mef file
           for b = 1: numBlocks
-            curPt = 1 + (b-1)*blockSize;
+            curPt = 1+(b-1)*blockSize;
             endPt = min([b*blockSize numSamples]);
             blockOffset = 1e6 * (b-1) * blockSize / animalSF;
 
@@ -172,6 +181,15 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
             timeVec = 0:length(data)-1;
             timeVec = timeVec ./ animalSF * 1e6;
             timeVec = timeVec + startTime + blockOffset;
+            
+            if dropSamples > 0
+              data(1:dropSamples) = [];
+              timeVec(1:dropSamples) = [];
+              fprintf('Dropped %d seconds. File: %s\n', ...
+                ceil(dropSamples/animalSF),EEGList(f).name);
+              dropSamples = 0;
+            end
+
 %             msg = sprintf(...
 %               'Writing %s channel %d. Percent finished: %3.1f. %s \\n',...
 %               EEGList(f).name, c, 100*b/numBlocks, ...
