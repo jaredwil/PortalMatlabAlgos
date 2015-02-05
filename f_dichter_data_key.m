@@ -4,13 +4,18 @@ function dataKey = f_dichter_data_key()
     'r099'
     'r100'
     'r101'
+    'r104'
     'r107'
     'r121'
     'r127'
     'r130'
     'r137'
+    'r146'
     'r151'
     'r152'
+    'r157'
+    'r161'
+    'r168'
   };
 
   dataKey.portalId = {
@@ -25,20 +30,11 @@ function dataKey = f_dichter_data_key()
     'I032_A0009_D001'
     'I032_A0010_D001'
     'I032_A0011_D001'
-  };
-
-  dataKey.stimulationDate = {
-    '3/12/08'
-    '5/19/08'
-    '5/29/08'
-    '6/30/08'
-    '9/12/08'
-    '3/24/09'
-    '8/11/09'
-    '8/14/09'
-    '1/14/10'
-    '3/16/11'
-    '4/26/11'
+    'I032_A0012_D001'
+    'I032_A0013_D001'
+    'I032_A0014_D001'
+    'I032_A0015_D001'
+    'I032_A0016_D001'
   };
 
   dataKey.seizures = {
@@ -46,12 +42,17 @@ function dataKey = f_dichter_data_key()
     'seizures'
     'no seizures'
     'no seizures'
-    'no seizures'
     'seizures'
     'no seizures'
     'seizures'
     'no seizures'
     'seizures'
+    'no seizures'
     'seizures'
+    'seizures'
+    'seizures'
+    'no seizures'
+    'seizures'
+    'no seizures'
   };
 end
