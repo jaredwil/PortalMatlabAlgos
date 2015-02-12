@@ -21,8 +21,8 @@ saveToFile = 0;
 
 
 %% Define constants for the analysis
-study = 'dichter';  % 'dichter'; 'jensen'; 'pitkanen'
-runThese = [2];  % dichter 2-3, pitkanen 1-3
+study = 'jensen';  % 'dichter'; 'jensen'; 'pitkanen'
+runThese = [6,10,15,17];  % jensen 3,4,15,17; dichter 2-3; pitkanen 1-3
 channels = [1,3];
 
 % params.label = 'spike';
@@ -86,7 +86,7 @@ for r = 1:length(runThese)
 end
 % <html><br></html>
 
-
+fig_h = 1;
 %% Run analysis
 for r = 1:length(runThese)
   if runBurstDetection
@@ -170,13 +170,13 @@ for r = 1:length(runThese)
   if runClustering
   end
   if runPhysiology
-    fig_h = 1;  % handle to current figure; this gets incremented in each function
+%     fig_h = 1;  % handle to current figure; this gets incremented in each function
 %     [fig_h] = fn_bph_per_rat(session,data_key,fig_h);
 %     [fig_h] = fn_bph_per_group(session,data_key,fig_h);
 %     params.label = 'spike';
 %     params.technique = 'threshold';
 %     [fig_h] = f_histogram_per_rat(session.data(r),dataKey,params,fig_h);
-    [fig_h] = f_choppedHistogram_per_rat(session.data(r),dataKey,fig_h);
+    [fig_h dur{r}] = f_choppedHistogram_per_rat(session.data(r),dataKey,fig_h);
   end
 end
 % <html><br></html>

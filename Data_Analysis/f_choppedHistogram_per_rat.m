@@ -1,5 +1,5 @@
-function fig_h = f_choppedHistogram_per_rat(snapshot,dataKey,fig_h)
-%   dbstop in f_choppedHistogram_per_rat at 52
+function [fig_h,bstTimes] = f_choppedHistogram_per_rat(snapshot,dataKey,fig_h)
+%   dbstop in f_choppedHistogram_per_rat at 67
 
 	fname = sprintf('%s-choppedHistogram.mat',snapshot.snapName);
   try
@@ -7,20 +7,20 @@ function fig_h = f_choppedHistogram_per_rat(snapshot,dataKey,fig_h)
   catch    
     blockSize = 1000; % max number of returned annots is 1000
 
-    layerName = sprintf('spike-noOverlap');
-    layer = 1;
-    while ~strcmp(snapshot.annLayer(layer).name,layerName) && layer < length(snapshot.annLayer)
-      layer = layer + 1;
-    end
-    snapshot.annLayer(layer).name
-    numEvents = snapshot.annLayer(layer).getNrEvents()
-    spkAnnots = snapshot.annLayer(layer).getEvents(1,blockSize);
-    while length(spkAnnots) < numEvents
-      spkAnnots = [spkAnnots snapshot.annLayer(layer).getNextEvents(spkAnnots(end),blockSize)];
-    end
-    spkTimes = [spkAnnots(1:end).start];
+%     layerName = sprintf('spike-noOverlap');
+%     layer = 1;
+%     while ~strcmp(snapshot.annLayer(layer).name,layerName) && layer < length(snapshot.annLayer)
+%       layer = layer + 1;
+%     end
+%     snapshot.annLayer(layer).name
+%     numEvents = snapshot.annLayer(layer).getNrEvents()
+%     spkAnnots = snapshot.annLayer(layer).getEvents(1,blockSize);
+%     while length(spkAnnots) < numEvents
+%       spkAnnots = [spkAnnots snapshot.annLayer(layer).getNextEvents(spkAnnots(end),blockSize)];
+%     end
+%     spkTimes = [spkAnnots(1:end).start];
 
-    layerName = sprintf('burst_LL');
+    layerName = sprintf('burst_detections');
     layer = 1;
     while ~strcmp(snapshot.annLayer(layer).name,layerName) && layer < length(snapshot.annLayer)
       layer = layer + 1;
@@ -31,30 +31,30 @@ function fig_h = f_choppedHistogram_per_rat(snapshot,dataKey,fig_h)
     while length(bstAnnots) < numEvents
       bstAnnots = [bstAnnots snapshot.annLayer(layer).getNextEvents(bstAnnots(end),blockSize)];
     end
-    bstTimes = [bstAnnots(1:end).start];
+    bstTimes = [bstAnnots(1:end).start; bstAnnots(1:end).stop];
 
-    layerName = sprintf('seizure-curated');
-    layer = 1;
-    while ~strcmp(snapshot.annLayer(layer).name,layerName) && layer < length(snapshot.annLayer)
-      layer = layer + 1;
-    end
-    snapshot.annLayer(layer).name
-    numEvents = snapshot.annLayer(layer).getNrEvents()
-    szrAnnots = snapshot.annLayer(layer).getEvents(1,blockSize);
-    while length(szrAnnots) < numEvents
-      szrAnnots = [szrAnnots snapshot.annLayer(layer).getNextEvents(szrAnnots(end),blockSize)];
-    end
-    szrTimes = [szrAnnots(1:end).start];
+%     layerName = sprintf('seizure-curated');
+%     layer = 1;
+%     while ~strcmp(snapshot.annLayer(layer).name,layerName) && layer < length(snapshot.annLayer)
+%       layer = layer + 1;
+%     end
+%     snapshot.annLayer(layer).name
+%     numEvents = snapshot.annLayer(layer).getNrEvents()
+%     szrAnnots = snapshot.annLayer(layer).getEvents(1,blockSize);
+%     while length(szrAnnots) < numEvents
+%       szrAnnots = [szrAnnots snapshot.annLayer(layer).getNextEvents(szrAnnots(end),blockSize)];
+%     end
+%     szrTimes = [szrAnnots(1:end).start];
 
 %     save(fname, 'spkTimes','bstTimes','szrTimes');
   end
   
-  timescale = 3600 * 24;  % make it 3600 for hours, 3600/24 for days
+  timescale = 1;  % make it 3600 for hours, 3600/24 for days
   
-  spkTimes = spkTimes / 1e6 / timescale; % convert to days
-  numDays = snapshot.channels(1).get_tsdetails().getDuration()/1e6/timescale;
-  [hspk,spkc] = hist(spkTimes,numDays);
-  figure(1); bar(hspk/2,'FaceColor','k','EdgeColor','k'); hold on;
+%   spkTimes = spkTimes / 1e6 / timescale; % convert to days
+%   numDays = snapshot.channels(1).get_tsdetails().getDuration()/1e6/timescale;
+%   [hspk,spkc] = hist(spkTimes,numDays);
+%   figure(1); bar(hspk/2,'FaceColor','k','EdgeColor','k'); hold on;
 
 %   x = spkc(hspk > 50);
 %   xx = [floor(x); floor(x); ceil(x); ceil(x)];
@@ -65,12 +65,13 @@ function fig_h = f_choppedHistogram_per_rat(snapshot,dataKey,fig_h)
 %   figure(2); patch(xxx,yyy+2*ones(length(yyy),1),'r');
   
   bstTimes = bstTimes / 1e6 / timescale; % convert to days
-  numDays = snapshot.channels(1).get_tsdetails().getDuration()/1e6/timescale;
-  [hbst,bstc] = hist(bstTimes,numDays);
-  figure(1); bar(hbst,'FaceColor',[0.7 0.7 0.7],'EdgeColor',[0.7 0.7 0.7]); hold on;
-  ylim([0 1000]);
-  set(gca,'YTick',[0 200 400 600 800 1000]);
-  title(snapshot.snapName);
+%   numDays = snapshot.channels(1).get_tsdetails().getDuration()/1e6/timescale;
+%   [hbst,bstc] = hist(bstTimes(1,:),numDays);
+%   figure(fig_h); bar(hbst,'FaceColor',[0.7 0.7 0.7],'EdgeColor',[0.7 0.7 0.7]); hold on;
+%   ylim([0 200]);
+%   set(gca,'YTick',[0 50 100 150 200]);
+%   title(snapshot.snapName);
+  durs = [mean(bstTimes(2,:)-bstTimes(1,:)) std(bstTimes(2,:)-bstTimes(1,:))];
 
 %   x = bstc(hbst > 10);
 %   xx = [floor(x); floor(x); ceil(x); ceil(x)];
@@ -80,11 +81,11 @@ function fig_h = f_choppedHistogram_per_rat(snapshot,dataKey,fig_h)
 %   yyy = reshape(y,size(y,1)*size(y,2),1);
 %   figure(2); patch(xxx,yyy+ones(length(yyy),1),'b');
 
-  szrTimes = szrTimes / 1e6 / timescale; % convert to days
-  numDays = snapshot.channels(1).get_tsdetails().getDuration()/1e6/timescale;
-  [hszr,szrc] = hist(szrTimes,numDays);
-  figure(1); bar(hszr,'FaceColor','r','EdgeColor','r'); hold on;
-  legend('Spikes','Bursts','Seizures'); 
+%   szrTimes = szrTimes / 1e6 / timescale; % convert to days
+%   numDays = snapshot.channels(1).get_tsdetails().getDuration()/1e6/timescale;
+%   [hszr,szrc] = hist(szrTimes,numDays);
+%   figure(1); bar(hszr,'FaceColor','r','EdgeColor','r'); hold on;
+%   legend('Spikes','Bursts','Seizures'); 
 
 %   
 %   x = szrc(hszr > 2);
