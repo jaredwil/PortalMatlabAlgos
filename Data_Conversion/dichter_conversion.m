@@ -20,8 +20,8 @@ dataBlockLenHr = 0.1; % hours; size of data block to pull from .eeg file
 mefGapThresh = 10000; % msec; min size of gap in data to be called a gap
 mefBlockSize = 10; % sec; size of block for mefwriter to write
 
-convert = 1;  % convert data y/n?
-test = 0;     % test data y/n?
+convert = 0;  % convert data y/n?
+test = 1;     % test data y/n?
 findBNI = 0;
 
 %% call f_dichter_eeg2mef to convert animal's files to mef

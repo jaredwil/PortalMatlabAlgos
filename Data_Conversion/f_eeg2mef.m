@@ -140,7 +140,7 @@ function [] = f_eeg2mef(animalDir, dataBlockLen, gapThresh, mefBlockSize)
     
     % convert one channel at a time; first 4 channels are important for
     % dichter data set
-    for c = 1: 4  % 1-4 are CA1 and DG, except r151 and r152
+    for c = 4  % 1-4 are CA1 and DG, except r151 and r152
       % open mef file, write metadata to the mef file
       mefFile = fullfile(outputDir, ['Dichter_' animalName '_ch' num2str(c, '%0.2d') '_' chanLabels{c} '.mef']);
       h = edu.mayo.msel.mefwriter.MefWriter(mefFile, mefBlockSize, animalSF, gapThresh); 
