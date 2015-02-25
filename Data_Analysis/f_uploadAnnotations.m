@@ -1,4 +1,4 @@
-function f_uploadAnnotations(dataset,layerName,eventTimesUSec,eventChannels,label)
+function f_addAnnotations(dataset,layerName,eventTimesUSec,eventChannels,label)
 %	Usage: uploadAnnotations(dataset, layerName, eventTimesUSec,eventChannels,label);
 %	
 %	dataset		-	IEEGDataset object

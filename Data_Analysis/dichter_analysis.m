@@ -4,29 +4,29 @@
 
 % make filtering an object
 % compare time for filtering/downsample in matlab to using the portal
-% add output to file component to track results, later, compare to doug's annotations?
-% move parameters to separate text files
-% define a feature and send it to toolbox
+% add output annotations
+% how to handle comparison with doug's annotations
 % step through results and look at visually
 % animal 2: days 48 - 56
 % how to handle the time offset between experiment/portal
+% make feature_energy output scales with channels
 
 
 clear all; close all; clc; tic;
 addpath('C:\Users\jtmoyer\Documents\MATLAB\');
 addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\ieeg-matlab-1.8.3'));
 
-
+ 
 %% Define constants for the analysis
 study = 'dichter';  % 'dichter'; 'jensen'; 'pitkanen'
 runThese = 2;  % jensen 3,4,15,17; dichter 2-3; pitkanen 1-3
-channels = 1;
-uploadAnnotations = 0; % if 1, upload to the portal; if 0, save to file
-params.label = 'feature';
+params.channels = 1:4;
+params.label = 'seizure';
 params.technique = 'energy';
 params.startTime = '48:09:00:00';  % day:hour:minute:second
-params.stopTime = '49:09:00:00'; % day:hour:minute:second
-
+params.stopTime = '48:14:00:00'; % day:hour:minute:second
+params.uploadAnnotations = 0; % if 1, upload to the portal; if 0, save to file
+params.viewData = 0;
 
 %% Load investigator data key
 switch study
@@ -53,37 +53,27 @@ for r = 1:length(runThese)
 end
 
 
-%% Run analysis
+%% Run analysis and upload results
 fig_h = 1;
 for r = 1:length(runThese)
   params = f_load_params(params);
   fprintf('Running %s_%s on: %s\n',params.label, params.technique, session.data(r).snapName);
   fh = str2func(sprintf('f_%s_%s', params.label, params.technique));
-  [eventTimes, eventChannels] = fh(session.data(r),channels,params);
-
-  if uploadAnnotations
-    if exist('eventTimes', 'var')
-      label = sprintf('%s-%s',params.label,params.technique);
-      f_uploadAnnotations(session.data(r),label,eventTimes,eventChannels,label);
-    end
-  else
-    f_saveToFile(params.experiment,eventTimes,eventChannels);
-  end
-  if runClustering
-  end
+  [eventTimes, eventChannels] = fh(session.data(r),params);
+  f_addAnnotations(session.data(r),params);
+  toc
 end
-% <html><br></html>
 
 
 %% Analyze results
-if runPhysiology
-%     fig_h = 1;  % handle to current figure; this gets incremented in each function
-%     [fig_h] = fn_bph_per_rat(session,data_key,fig_h);
-%     [fig_h] = fn_bph_per_group(session,data_key,fig_h);
-%     params.label = 'spike';
-%     params.technique = 'threshold';
-%     [fig_h] = f_histogram_per_rat(session.data(r),dataKey,params,fig_h);
-  [fig_h dur{r}] = f_choppedHistogram_per_rat(session.data(r),dataKey,fig_h);
-end
+% if runPhysiology
+% %     fig_h = 1;  % handle to current figure; this gets incremented in each function
+% %     [fig_h] = fn_bph_per_rat(session,data_key,fig_h);
+% %     [fig_h] = fn_bph_per_group(session,data_key,fig_h);
+% %     params.label = 'spike';
+% %     params.technique = 'threshold';
+% %     [fig_h] = f_histogram_per_rat(session.data(r),dataKey,params,fig_h);
+%   [fig_h dur{r}] = f_choppedHistogram_per_rat(session.data(r),dataKey,fig_h);
+% end
 
 
