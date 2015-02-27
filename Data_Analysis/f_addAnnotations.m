@@ -7,11 +7,22 @@ function f_addAnnotations(dataset,params)
 %	Function will upload to the IEEG portal the given events obtained from running various detection
 %	algorithms (e.g. spike_AR.m). Annotations will be associated with eventChannels and given a label.
 %
-%   dbstop in f_addAnnotations at 16
+%   dbstop in f_addAnnotations at 12
   
   if params.addAnnotations
-    fname = sprintf('../Output/%s-%s-%s',dataset.snapName,params.label,params.technique);
-    m = memmapfile([fname '.txt'],'Format','single');
+    fname = sprintf('../Output/%s-annot-%s-%s.txt',dataset.snapName,params.label,params.technique);
+    try
+      fileExist = dir(fname);
+      if fileExist.bytes > 0
+        m = memmapfile([fname '.txt'],'Format','single');
+      else
+        fprintf('No data found in: %s\n',fname);
+        return;
+      end
+    catch
+      fprintf('File not found: %s\n',fname);
+      return;
+    end
     
     layerName = sprintf('%s-%s',params.label,params.technique);
     try 

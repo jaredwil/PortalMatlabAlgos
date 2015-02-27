@@ -55,7 +55,6 @@ function f_seizure_energy(dataset,params)
     data = dataset.getvalues(curPt:endPt,params.channels);
     nw = int64(NumWins(length(data), fs, params.windowLength, params.windowDisplacement));
     idxOut = zeros(nw,1);
-%     featureOut = zeros(nw,length(params.channels));
     fprintf('%s: Processing block %d of %d\n', dataset.snapName, b, numBlocks);
 
     %%-----------------------------------------
@@ -119,16 +118,16 @@ function f_seizure_energy(dataset,params)
           figure(1); subplot(2,2,c); hold on;
           plot(time(curPlot:endPlot),data(curPlot:endPlot,c)/max(data(curPlot:endPlot,c)),'k');
           plot(timeFt(curPlotFt:endPlotFt),output(c+1,curPlotFt:endPlotFt)/max(output(c+1,curPlotFt:endPlotFt)),'r');   
-          xlim([floor(plotWidth*(p-1)+time(1)) floor(plotWidth*p+time(1))]);
+          xlim([floor(plotWidth*(p-1)+time(1)) plotWidth*p+time(1)]);
           ylim([-1 1]);
           xlabel(sprintf('Day %d, Hour %d',day,hour));
           title(sprintf('Channel %d',c));
-          line([plotWidth*(p-1) plotWidth*p],[params.minThresh/max(output(c+1,curPlotFt:endPlotFt)) ...
+          line([timeFt(curPlotFt) timeFt(endPlotFt)],[params.minThresh/max(output(c+1,curPlotFt:endPlotFt)) ...
             params.minThresh/max(output(c+1,curPlotFt:endPlotFt))],'Color','r');
           hold off;
         end
         p = p + 1;
-        pause
+        pause;
       end
     end
 

@@ -4,12 +4,9 @@
 
 % make filtering an object
 % compare time for filtering/downsample in matlab to using the portal
-% add output annotations
 % how to handle comparison with doug's annotations
-% step through results and look at visually
 % animal 2: days 48 - 56
 % how to handle the time offset between experiment/portal
-% make feature_energy output scales with channels
 
 
 clear all; close all; clc; tic;
@@ -21,12 +18,10 @@ addpath(genpath('C:\Users\jtmoyer\Documents\MATLAB\ieeg-matlab-1.8.3'));
 study = 'dichter';  % 'dichter'; 'jensen'; 'pitkanen'
 runThese = 2;  % jensen 3,4,15,17; dichter 2-3; pitkanen 1-3
 params.channels = 1:4;
-params.label = 'seizure';
-params.technique = 'energy';
-params.startTime = '48:09:00:00';  % day:hour:minute:second
-params.stopTime = '48:14:00:00'; % day:hour:minute:second
-params.uploadAnnotations = 0; % if 1, upload to the portal; if 0, save to file
-params.viewData = 0;
+params.label = 'burst';
+params.technique = 'linelength';
+params.startTime = '46:08:00:00';  % day:hour:minute:second
+params.stopTime = '46:10:00:00'; % day:hour:minute:second
 
 %% Load investigator data key
 switch study
@@ -56,10 +51,10 @@ end
 %% Run analysis and upload results
 fig_h = 1;
 for r = 1:length(runThese)
-  params = f_load_params(params);
+  params = f_load_params(params)
   fprintf('Running %s_%s on: %s\n',params.label, params.technique, session.data(r).snapName);
   fh = str2func(sprintf('f_%s_%s', params.label, params.technique));
-  [eventTimes, eventChannels] = fh(session.data(r),params);
+  fh(session.data(r),params);
   f_addAnnotations(session.data(r),params);
   toc
 end
